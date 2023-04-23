@@ -18,7 +18,6 @@ class Exp1(nn.Module):
         num_heads=4,
         mlp_ratio=4,
         dropout=0.2,
-        drate=0.2,
         num_classes=5,
     ):
         super().__init__()
@@ -31,7 +30,6 @@ class Exp1(nn.Module):
             torch.zeros(1, self.num_patches + 1, embed_dim), requires_grad=False
         )
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
-        self.dropout = nn.Dropout(drate)
         self.blocks = Transformer(embed_dim, depth, num_heads, mlp_ratio, dropout)
         # --------------------------------------------------------------------------
 
@@ -56,7 +54,6 @@ class Exp1(nn.Module):
         x = x + self.pos_embed
 
         # apply Transformer blocks
-        x = self.dropout(x)
         x, _ = self.blocks(x)
 
         # token
