@@ -8,6 +8,7 @@ from misc.dataset import Load_Dataset
 from misc.metrics import _calc_metrics
 from misc.utils import get_logger
 from models.exp1 import Exp1
+from models.exp4 import Exp4
 
 
 home_dir = os.getcwd()
@@ -31,6 +32,7 @@ parser.add_argument(
 )
 parser.add_argument('--dataset', default='edf20', type=str, help='specify the dataset')
 parser.add_argument('--modality', default='eeg', type=str, help='specify the modality')
+parser.add_argument('--model_name', default='Exp1', type=str, help='model name')
 parser.add_argument(
     '--epochs', default=40, type=int, help='total number of traning epoch'
 )
@@ -65,7 +67,7 @@ train_loader = torch.utils.data.DataLoader(
 
 
 device = torch.device(args.device)
-model = Exp1().to(device)
+model = globals()[f'{args.model_name}']().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.AdamW(
     model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=5e-2

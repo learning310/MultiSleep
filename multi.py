@@ -10,9 +10,7 @@ from misc.utils import get_logger
 from models.idea import Idea
 from models.exp2 import Exp2
 from models.exp3 import Exp3
-import warnings
 
-warnings.filterwarnings("ignore")
 
 home_dir = os.getcwd()
 parser = argparse.ArgumentParser()
@@ -34,6 +32,7 @@ parser.add_argument(
     '--home_path', default=home_dir, type=str, help='Project home directory'
 )
 parser.add_argument('--dataset', default='edf20', type=str, help='specify the dataset')
+parser.add_argument('--model_name', default='Idea', type=str, help='model name')
 parser.add_argument(
     '--epochs', default=40, type=int, help='total number of traning epoch'
 )
@@ -74,7 +73,7 @@ eog_train_loader = torch.utils.data.DataLoader(
 
 
 device = torch.device(args.device)
-model = Idea().to(device)
+model = globals()[f'{args.model_name}']().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.AdamW(
     model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=5e-2
@@ -215,7 +214,7 @@ with torch.no_grad():
             out1, trgs, experiment_log_dir, args.home_path
         )
         logger.info(f"Testing_eeg->Acc:{valid_acc_1:.3f}, F1:{valid_f1_1:.3f}")
-    if out2 != np.array([]):
+    elif out2 != np.array([]):
         valid_acc_2, valid_f1_2 = _calc_metrics(
             out2, trgs, experiment_log_dir, args.home_path
         )
