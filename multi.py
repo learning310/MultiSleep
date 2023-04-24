@@ -10,7 +10,9 @@ from misc.utils import get_logger
 from models.idea import Idea
 from models.exp2 import Exp2
 from models.exp3 import Exp3
+import warnings
 
+warnings.filterwarnings("ignore")
 
 home_dir = os.getcwd()
 parser = argparse.ArgumentParser()
@@ -110,6 +112,15 @@ for epoch in range(args.epochs):
             train_acc3.append(
                 label.eq(pred3.detach().argmax(dim=1)).float().mean().cpu()
             )
+        elif len(pred) == 2:
+            pred1, pred2 = pred[0], pred[1]
+            loss = criterion(pred1, label) + criterion(pred2, label)
+            train_acc1.append(
+                label.eq(pred1.detach().argmax(dim=1)).float().mean().cpu()
+            )
+            train_acc2.append(
+                label.eq(pred2.detach().argmax(dim=1)).float().mean().cpu()
+            )
         else:
             loss = criterion(pred, label)
             train_acc1.append(
@@ -121,6 +132,10 @@ for epoch in range(args.epochs):
     if train_acc3 != []:
         logger.info(
             f"Training->Epoch:{epoch:0>2d}, Loss:{np.mean(train_loss):.3f}, Acc1:{np.mean(train_acc1):.3f}, Acc2:{np.mean(train_acc2):.3f}, Acc3:{np.mean(train_acc3):.3f}"
+        )
+    elif train_acc2 != []:
+        logger.info(
+            f"Training->Epoch:{epoch:0>2d}, Loss:{np.mean(train_loss):.3f}, Acc1:{np.mean(train_acc1):.3f}, Acc2:{np.mean(train_acc2):.3f}"
         )
     else:
         logger.info(
@@ -140,14 +155,13 @@ eog_test_loader = torch.utils.data.DataLoader(
     dataset=eog_test_dataset, batch_size=128, shuffle=False, drop_last=False
 )
 
-
 model.eval()
 with torch.no_grad():
     out1 = np.array([])
     out2 = np.array([])
     out3 = np.array([])
     trgs = np.array([])
-    for eeg, eog in zip(eeg_train_loader, eog_train_loader):
+    for eeg, eog in zip(eeg_test_loader, eog_test_loader):
         eeg, label = eeg[0], eeg[1]
         eog, _ = eog[0], eog[1]
         eeg, eog, label = (
@@ -171,6 +185,16 @@ with torch.no_grad():
             out3 = np.append(out3, pred.cpu().numpy())
 
             trgs = np.append(trgs, label.data.cpu().numpy())
+        elif len(pred) == 2:
+            pred1, pred2 = pred[0], pred[1]
+
+            pred = pred1.max(1, keepdim=True)[1]
+            out1 = np.append(out1, pred.cpu().numpy())
+
+            pred = pred2.max(1, keepdim=True)[1]
+            out2 = np.append(out2, pred.cpu().numpy())
+
+            trgs = np.append(trgs, label.data.cpu().numpy())
         else:
             pred = pred.max(1, keepdim=True)[1]
             out1 = np.append(out1, pred.cpu().numpy())
@@ -186,6 +210,16 @@ with torch.no_grad():
         )
         logger.info(f"Testing_eog->Acc:{valid_acc_2:.3f}, F1:{valid_f1_2:.3f}")
         logger.info(f"Testing_inter->Acc:{valid_acc_3:.3f}, F1:{valid_f1_3:.3f}")
+
+        valid_acc_1, valid_f1_1 = _calc_metrics(
+            out1, trgs, experiment_log_dir, args.home_path
+        )
+        logger.info(f"Testing_eeg->Acc:{valid_acc_1:.3f}, F1:{valid_f1_1:.3f}")
+    if out2 != np.array([]):
+        valid_acc_2, valid_f1_2 = _calc_metrics(
+            out2, trgs, experiment_log_dir, args.home_path
+        )
+        logger.info(f"Testing_eog->Acc:{valid_acc_2:.3f}, F1:{valid_f1_2:.3f}")
 
         valid_acc_1, valid_f1_1 = _calc_metrics(
             out1, trgs, experiment_log_dir, args.home_path

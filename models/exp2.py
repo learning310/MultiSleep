@@ -32,7 +32,6 @@ class Exp2(nn.Module):
             torch.zeros(1, self.num_patches + 1, embed_dim), requires_grad=False
         )
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
-        self.dropout = nn.Dropout(drate)
         self.blocks = Transformer(embed_dim, depth, num_heads, mlp_ratio, dropout)
         # --------------------------------------------------------------------------
 
@@ -57,7 +56,6 @@ class Exp2(nn.Module):
         x = x + self.pos_embed
 
         # apply Transformer blocks
-        x = self.dropout(x)
         x, _ = self.blocks(x)
 
         # token
