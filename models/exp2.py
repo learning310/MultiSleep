@@ -56,7 +56,7 @@ class Exp2(nn.Module):
         x = x + self.pos_embed
 
         # apply Transformer blocks
-        x, _ = self.blocks(x)
+        x = self.blocks(x)
 
         # token
         x = x[:, 0]

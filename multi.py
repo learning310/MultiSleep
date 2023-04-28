@@ -10,6 +10,7 @@ from misc.utils import get_logger
 from models.idea import Idea
 from models.exp2 import Exp2
 from models.exp3 import Exp3
+from models.exp5 import Exp5
 
 
 home_dir = os.getcwd()
@@ -34,9 +35,9 @@ parser.add_argument(
 parser.add_argument('--dataset', default='edf20', type=str, help='specify the dataset')
 parser.add_argument('--model_name', default='Idea', type=str, help='model name')
 parser.add_argument(
-    '--epochs', default=40, type=int, help='total number of traning epoch'
+    '--epochs', default=200, type=int, help='total number of traning epoch'
 )
-parser.add_argument('--lr', default=3e-4, type=float, help='the inital learning rate')
+parser.add_argument('--lr', default=0.001, type=float, help='the inital learning rate')
 args = parser.parse_args()
 
 
@@ -62,22 +63,23 @@ logger = get_logger("train")
 eeg_train_dataset = torch.load(os.path.join(f'./{args.dataset}/eeg/train.pt'))
 eeg_train_dataset = Load_Dataset(eeg_train_dataset)
 eeg_train_loader = torch.utils.data.DataLoader(
-    dataset=eeg_train_dataset, batch_size=128, shuffle=True, drop_last=False
+    dataset=eeg_train_dataset, batch_size=32, shuffle=True, drop_last=False
 )
 
 eog_train_dataset = torch.load(os.path.join(f'./{args.dataset}/eog/train.pt'))
 eog_train_dataset = Load_Dataset(eog_train_dataset)
 eog_train_loader = torch.utils.data.DataLoader(
-    dataset=eog_train_dataset, batch_size=128, shuffle=True, drop_last=False
+    dataset=eog_train_dataset, batch_size=32, shuffle=True, drop_last=False
 )
 
 
 device = torch.device(args.device)
 model = globals()[f'{args.model_name}']().to(device)
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.AdamW(
-    model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=5e-2
+optimizer = torch.optim.Adam(
+    model.parameters(), lr=args.lr, betas=(0.9, 0.999), eps=1e-9, weight_decay=1e-4
 )
+lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5)
 
 model.train()
 for epoch in range(args.epochs):
@@ -128,6 +130,7 @@ for epoch in range(args.epochs):
         train_loss.append(loss.item())
         loss.backward()
         optimizer.step()
+    lr_scheduler.step()
     if train_acc3 != []:
         logger.info(
             f"Training->Epoch:{epoch:0>2d}, Loss:{np.mean(train_loss):.3f}, Acc1:{np.mean(train_acc1):.3f}, Acc2:{np.mean(train_acc2):.3f}, Acc3:{np.mean(train_acc3):.3f}"

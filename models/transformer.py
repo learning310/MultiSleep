@@ -90,9 +90,7 @@ class Transformer(nn.Module):
             )
 
     def forward(self, x, mask=None):
-        outputs = []
         for depth, (attn, ff) in enumerate(self.layers):
             x = attn(x, mask=mask)
             x = ff(x)
-            outputs.append(x)
-        return x, outputs
+        return x

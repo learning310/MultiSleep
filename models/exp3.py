@@ -59,14 +59,14 @@ class Exp3(nn.Module):
         cls_tokens = self.cls_token1.expand(x.shape[0], -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
         x = x + self.pos_embed
-        x, _ = self.eeg_encoder(x)
+        x = self.eeg_encoder(x)
 
         # eog encoding
         y = self.eog_embed(y)
         cls_tokens = self.cls_token2.expand(y.shape[0], -1, -1)
         y = torch.cat((cls_tokens, y), dim=1)
         y = y + self.pos_embed
-        y, _ = self.eog_encoder(y)
+        y = self.eog_encoder(y)
 
         # classify
         x = x[:, 0]
